@@ -10,7 +10,7 @@ let what_do = 0;
 const audioList = [];
 
 // Cloudflare WorkerのURLに置き換えてください。
-const CLOUD_API_BASE = "https://YOUR-WORKER-NAME.YOUR-SUBDOMAIN.workers.dev";
+const CLOUD_API_BASE = "https://hyakunin-isshu-save.tcg-nekosuzuki.workers.dev";
 let resumeFromSavedPosition = false;
 
 // 再生状態と制御用変数
@@ -111,7 +111,7 @@ function playAudioPromise(audioUrl, speechText) {
         }
 
         currentAudio = new Audio(audioUrl);
-        
+
         currentAudio.play().then(() => {
             currentAudio.onended = () => {
                 currentAudio = null;
@@ -352,7 +352,7 @@ async function main() {
     if (shouldPlayJoka) {
         updateStatus("【序歌】難波津に咲くやこの花...");
         await playAudioPromise("assets/audio/joka.mp3", "難波津に 咲くやこの花 冬ごもり 今を春べと 咲くやこの花");
-        
+
         if (!isPlaying) return;
 
         const intervalNext = parseFloat(document.getElementById("intervalNext").value) * 1000;
@@ -419,11 +419,11 @@ setup();
 // --- イベントリスナー ---
 
 // スライダー調整
-document.getElementById("intervalKamiShimo").addEventListener("input", function() {
+document.getElementById("intervalKamiShimo").addEventListener("input", function () {
     document.getElementById("intervalKamiShimoVal").textContent = `${this.value} 秒`;
 });
 
-document.getElementById("intervalNext").addEventListener("input", function() {
+document.getElementById("intervalNext").addEventListener("input", function () {
     document.getElementById("intervalNextVal").textContent = `${this.value} 秒`;
 });
 
