@@ -29,6 +29,9 @@ let isPaused = false;
 let currentAudio = null;
 let audioResolve = null;
 
+// 読み上げ速度（1.0～2.0倍）
+let playbackSpeed = 1.0;
+
 
 // =====================================================
 // 初期化
@@ -124,6 +127,19 @@ function updateIntervalDisplay() {
 
     document.getElementById("intervalNextVal").textContent =
         `${Number(value).toFixed(1)} 秒`;
+}
+
+function updateSpeedDisplay() {
+    const slider = document.getElementById("playbackSpeed");
+    playbackSpeed = Number(slider.value);
+
+    document.getElementById("playbackSpeedVal").textContent =
+        `${playbackSpeed.toFixed(1)} 倍`;
+
+    // 再生中に変更した場合は、現在の音声にも即時反映する
+    if (currentAudio) {
+        currentAudio.playbackRate = playbackSpeed;
+    }
 }
 
 function updateModeButtons() {
@@ -238,6 +254,7 @@ function playAudioPromise(audioUrl) {
         }
 
         currentAudio = new Audio(audioUrl);
+        currentAudio.playbackRate = playbackSpeed;
 
         let completed = false;
 
@@ -309,7 +326,8 @@ function createSaveData() {
             playJoka: document.getElementById("playJokaCheckbox").checked,
             intervalNext: Number(
                 document.getElementById("intervalNext").value
-            )
+            ),
+            playbackSpeed
         }
     };
 }
@@ -524,9 +542,13 @@ async function loadFromCloud() {
 
             document.getElementById("intervalNext").value =
                 data.settings.intervalNext ?? 4.0;
+
+            document.getElementById("playbackSpeed").value =
+                data.settings.playbackSpeed ?? 1.0;
         }
 
         updateIntervalDisplay();
+        updateSpeedDisplay();
         updateModeButtons();
         updateCounterDisplay();
 
@@ -703,6 +725,9 @@ function stopMain() {
 
 document.getElementById("intervalNext")
     .addEventListener("input", updateIntervalDisplay);
+
+document.getElementById("playbackSpeed")
+    .addEventListener("input", updateSpeedDisplay);
 
 document.getElementById("saveButton")
     .addEventListener("click", saveToCloud);
