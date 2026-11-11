@@ -327,6 +327,11 @@ async function saveToCloud() {
     updateStatus("クラウドに保存中...");
 
     try {
+        const payload = createSaveData();
+
+        // 送信前にWorkerと同じ条件でデータを検証する
+        validateSaveData(payload);
+
         const response = await fetch(
             `${CLOUD_API_BASE}/api/save`,
             {
@@ -334,15 +339,31 @@ async function saveToCloud() {
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify(createSaveData())
+                body: JSON.stringify(payload)
             }
         );
 
-        const result = await response.json().catch(() => ({}));
+        // JSON以外のエラーレスポンスも診断できるよう、まず文字列で取得する
+        const responseText = await response.text();
+        let result = {};
+
+        try {
+            result = responseText ? JSON.parse(responseText) : {};
+        } catch {
+            result = {};
+        }
 
         if (!response.ok) {
+            console.error("Cloudflare Worker response:", {
+                status: response.status,
+                body: responseText,
+                payload
+            });
+
             throw new Error(
-                result.error || `保存に失敗しました (${response.status})`
+                result.error ||
+                responseText ||
+                `保存に失敗しました (${response.status})`
             );
         }
 
