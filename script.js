@@ -534,7 +534,29 @@ async function loadFromCloud() {
         Green_random = [...data.g];
         Orange_random = [...data.o];
 
-        currentIndex = data.position;
+        // 入力された残り枚数があれば、保存位置より優先する
+        const remainingInput = document.getElementById("loadRemainingInput").value.trim();
+        const targetLength = getTargetList().length;
+
+        if (remainingInput === "") {
+            // 空欄なら保存時の再生位置をそのまま復元
+            currentIndex = data.position;
+        } else {
+            const requestedRemaining = Number(remainingInput);
+
+            if (
+                !Number.isInteger(requestedRemaining) ||
+                requestedRemaining < 1 ||
+                requestedRemaining > targetLength
+            ) {
+                throw new Error(
+                    `残り枚数は1～${targetLength}の整数で入力してください。`
+                );
+            }
+
+            // 例：全100首で残り30首なら、先頭から70首進んだ位置
+            currentIndex = targetLength - requestedRemaining;
+        }
 
         if (data.settings) {
             document.getElementById("playJokaCheckbox").checked =
