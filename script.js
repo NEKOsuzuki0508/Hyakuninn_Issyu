@@ -293,18 +293,18 @@ function getAudioPath(number) {
 // =====================================================
 
 function createSaveData() {
+    // Cloudflare Workerの保存形式に合わせた短縮キーを使用する
     return {
-        what_do: what_do,
+        w: what_do,
+        r: [...random],
+        b: [...Blue_random],
+        p: [...Pink_random],
+        y: [...Yellow_random],
+        g: [...Green_random],
+        o: [...Orange_random],
+        position: currentIndex,
 
-        random: [...random],
-        Blue_random: [...Blue_random],
-        Pink_random: [...Pink_random],
-        Yellow_random: [...Yellow_random],
-        Green_random: [...Green_random],
-        Orange_random: [...Orange_random],
-
-        currentIndex: currentIndex,
-
+        // Workerは追加プロパティを許容するため、設定も一緒に保存する
         settings: {
             playJoka: document.getElementById("playJokaCheckbox").checked,
             intervalNext: Number(
@@ -338,11 +338,13 @@ async function saveToCloud() {
             }
         );
 
-        if (!response.ok) {
-            throw new Error(`保存に失敗しました (${response.status})`);
-        }
+        const result = await response.json().catch(() => ({}));
 
-        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(
+                result.error || `保存に失敗しました (${response.status})`
+            );
+        }
 
         if (!result.id) {
             throw new Error("保存IDが返されませんでした。");
@@ -401,39 +403,43 @@ async function copySaveId() {
 // =====================================================
 
 function validateSaveData(data) {
-    const arrayNames = [
-        "random",
-        "Blue_random",
-        "Pink_random",
-        "Yellow_random",
-        "Green_random",
-        "Orange_random"
+    const lists = [
+        { key: "r", min: 1, max: 100, length: 100 },
+        { key: "b", min: 1, max: 20, length: 20 },
+        { key: "p", min: 21, max: 40, length: 20 },
+        { key: "y", min: 41, max: 60, length: 20 },
+        { key: "g", min: 61, max: 80, length: 20 },
+        { key: "o", min: 81, max: 100, length: 20 }
     ];
 
-    if (!Number.isInteger(data.what_do) ||
-        data.what_do < 0 ||
-        data.what_do > 5) {
+    if (!Number.isInteger(data.w) || data.w < 0 || data.w > 5) {
         throw new Error("モード情報が不正です。");
     }
 
-    for (const name of arrayNames) {
-        if (!Array.isArray(data[name])) {
-            throw new Error(`${name}が不正です。`);
+    for (const { key, min, max, length } of lists) {
+        const list = data[key];
+
+        if (!Array.isArray(list) || list.length !== length) {
+            throw new Error(`保存データの配列 ${key} が不正です。`);
         }
 
-        if (data[name].some(
-            number =>
-                !Number.isInteger(number) ||
-                number < 1 ||
-                number > 100
-        )) {
-            throw new Error(`${name}に不正な番号があります。`);
+        if (
+            new Set(list).size !== length ||
+            !list.every(number =>
+                Number.isInteger(number) && number >= min && number <= max
+            )
+        ) {
+            throw new Error(`保存データの配列 ${key} に不正な値があります。`);
         }
     }
 
-    if (!Number.isInteger(data.currentIndex) ||
-        data.currentIndex < 0 ||
-        data.currentIndex > data.random.length) {
+    const maxPosition = data.w === 0 ? 100 : 20;
+
+    if (
+        !Number.isInteger(data.position) ||
+        data.position < 0 ||
+        data.position > maxPosition
+    ) {
         throw new Error("再生位置が不正です。");
     }
 }
@@ -479,16 +485,17 @@ async function loadFromCloud() {
 
         validateSaveData(data);
 
-        what_do = data.what_do;
+        // Workerの短縮キーから、アプリ内部の変数名へ復元する
+        what_do = data.w;
 
-        random = [...data.random];
-        Blue_random = [...data.Blue_random];
-        Pink_random = [...data.Pink_random];
-        Yellow_random = [...data.Yellow_random];
-        Green_random = [...data.Green_random];
-        Orange_random = [...data.Orange_random];
+        random = [...data.r];
+        Blue_random = [...data.b];
+        Pink_random = [...data.p];
+        Yellow_random = [...data.y];
+        Green_random = [...data.g];
+        Orange_random = [...data.o];
 
-        currentIndex = data.currentIndex;
+        currentIndex = data.position;
 
         if (data.settings) {
             document.getElementById("playJokaCheckbox").checked =
